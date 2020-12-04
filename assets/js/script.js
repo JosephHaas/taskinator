@@ -1,11 +1,10 @@
 var taskIdCounter = 0;
-
-
 var formEl = document.querySelector("#task-form");
 var tasksToDoEl = document.querySelector("#tasks-to-do");
 var pageContentEl = document.querySelector("#page-content");
 var tasksInProgressEl = document.querySelector("#tasks-in-progress");
 var tasksCompletedEl = document.querySelector("#tasks-completed");
+
 var completeEditTask = function(taskName, taskType, taskId) {
     // find the matching task list item
     var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
@@ -32,26 +31,26 @@ var taskFormHandler = function(event) {
 
 formEl.reset();
 
-    var isEdit = formEl.hasAttribute("data-task-id");
+var isEdit = formEl.hasAttribute("data-task-id");
   
-        // package up data as an object
-        var taskDataObj = {
-            name: taskNameInput,
-            type: taskTypeInput
+    // package up data as an object
+    var taskDataObj = {
+        name: taskNameInput,
+        type: taskTypeInput
     };
   
-        // PUT THIS BELOW `var isEdit = ...` in `taskFormHandler()`
+    // PUT THIS BELOW `var isEdit = ...` in `taskFormHandler()`
 
-        // has data attribute, so get task id and call function to complete edit process
-        if (isEdit) {
-            var taskId = formEl.getAttribute("data-task-id");
-            completeEditTask(taskNameInput, taskTypeInput, taskId);
-  } 
-        // no data attribute, so create object as normal and pass to createTaskEl function
-        else {
-            var taskDataObj = {
-            name: taskNameInput,
-            type: taskTypeInput
+    // has data attribute, so get task id and call function to complete edit process
+    if (isEdit) {
+        var taskId = formEl.getAttribute("data-task-id");
+        completeEditTask(taskNameInput, taskTypeInput, taskId);
+    } 
+    // no data attribute, so create object as normal and pass to createTaskEl function
+    else {
+        var taskDataObj = {
+        name: taskNameInput,
+        type: taskTypeInput
     };
   
     createTaskEl(taskDataObj);
@@ -66,7 +65,8 @@ var createTaskEl = function(taskDataObj) {
 
     // add task id as a custom attribute
     listItemEl.setAttribute("data-task-id", taskIdCounter);
-
+    listItemEl.setAttribute("draggable", "true");
+    
     // create div to hold task info and add to list item
     var taskInfoEl = document.createElement("div");
         taskInfoEl.className = "task-info";
@@ -186,6 +186,48 @@ var taskStatusChangeHandler = function(event) {
   }
 };
 
+var dragTaskHandler = function(event) {
+    var taskId = event.target.getAttribute("data-task-id");
+        console.log("Task ID:", taskId);
+        console.log("event", event);
+        event.dataTransfer.setData("text/plain", taskId);
+    var getId = event.dataTransfer.getData("text/plain");
+        console.log("getId:", getId, typeof getId);
+  }
+
+  var dropZoneDragHandler = function(event) {
+    var taskListEl = event.target.closest(".task-list");
+    if (taskListEl) {
+      event.preventDefault();
+    }
+  };
+
+  var dropTaskHandler = function(event) {
+    var id = event.dataTransfer.getData("text/plain");
+    var draggableElement = document.querySelector("[data-task-id='" + id + "']");
+    var dropZoneEl = event.target.closest(".task-list");
+    var statusType = dropZoneEl.id;
+    var statusSelectEl = draggableElement.querySelector("select[name='status-change']");
+        console.dir(statusSelectEl);
+        console.log(statusSelectEl);
+        if (statusType === "tasks-to-do") {
+            statusSelectEl.selectedIndex = 0;
+          } 
+          else if (statusType === "tasks-in-progress") {
+            statusSelectEl.selectedIndex = 1;
+          } 
+          else if (statusType === "tasks-completed") {
+            statusSelectEl.selectedIndex = 2;
+          }
+
+          dropZoneEl.appendChild(draggableElement);
+  };
+
+
+
 formEl.addEventListener("submit", taskFormHandler);
 pageContentEl.addEventListener("click", taskButtonHandler);
 pageContentEl.addEventListener("change", taskStatusChangeHandler);
+pageContentEl.addEventListener("dragstart", dragTaskHandler);
+pageContentEl.addEventListener("dragover", dropZoneDragHandler);
+pageContentEl.addEventListener("drop", dropTaskHandler);
